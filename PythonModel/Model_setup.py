@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import os
 from keras.preprocessing.sequence import TimeseriesGenerator
 from keras.models import Sequential
@@ -8,9 +8,16 @@ from keras.regularizers import l2
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint
 from sklearn.preprocessing import LabelEncoder
+from keras.models import load_model
+from keras import backend as k
+from tensorflow.python.tools import freeze_graph, optimize_for_inference_lib
+import tensorflow as tf
+from tensorflow.python.framework.ops import disable_eager_execution
+
+disable_eager_execution()
 
 #prepare dataset
-'''path='DataSet/'
+path='DataSet/'
 files = os.listdir(path)
 files.pop()
 
@@ -30,7 +37,7 @@ labels.columns=["Activity"]
 
 train_data["Activity"] = labels
 
-train_data.loc[(train_data.Activity == "upsatirs")] = "upstairs"'''
+train_data.loc[(train_data.Activity == "upsatirs")] = "upstairs"
 
 #split the dataset
 X_train = pd.read_csv("XTrain.csv")
@@ -76,10 +83,23 @@ model.add(Dense(len(np.unique(y_train)), activation="softmax", kernel_regularize
 model.summary()
 
 #compile the model
-model.compile(loss="sparse_categorical_crossentropy", optimizer=Adam(), metrics=["accuracy"])
+#model.compile(loss="sparse_categorical_crossentropy", optimizer=Adam(), metrics=["accuracy"])
 
 #prepare callback
-callback = [ModelCheckpoint("model.h5", save_weights_only=False, save_best_only=True, verbose=1)]
+#callback = [ModelCheckpoint("model.h5", save_weights_only=False, save_best_only=True, verbose=1)]
 
 #train_model
-history = model.fit_generator(train_gen, epochs=2, validation_data=test_gen, callbacks=callback)
+#history = model.fit_generator(train_gen, epochs=2, validation_data=test_gen, callbacks=callback)
+
+#save model for android usage
+model = load_model('model.h5')
+
+input_node_name = ["lstm1_input"]
+output_node_name = "output/Softmax"
+model_name = "model"
+
+tf.io.write_graph(k.get_session().graph_def, 'models', model_name + "_graph.pbtxt")
+saver = tf.compat.v1.train.Saver()
+saver.save(k.get_session(), 'models/'+model_name + ".chkp")
+
+freeze_graph.freeze_graph('models/'+model_name + "_graph.pbtxt", None, False, 'models/'+model_name+".chkp", output_node_name, "save/restore_all", 'save/Const:0', 'models/frozen' + model_name + ".pb", True, "")
