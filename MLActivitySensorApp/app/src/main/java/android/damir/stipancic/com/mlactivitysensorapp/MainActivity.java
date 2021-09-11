@@ -8,8 +8,10 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 
 import java.lang.annotation.Inherited;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,10 +30,14 @@ public class MainActivity extends AppCompatActivity  implements SensorEventListe
     private float[] results;
     private ActivityClassifier classifier;
 
+    private TextView mBikingTxt, mDownstairsTxt, mJoggingTxt, mSittingTxt, mStandingTxt, mUpstairsTxt, mWalkingTxt;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        setupLayout();
 
         ax = new ArrayList<>(); ay = new ArrayList<>(); az = new ArrayList<>();
         gx = new ArrayList<>(); gy = new ArrayList<>(); gz = new ArrayList<>();
@@ -48,6 +54,17 @@ public class MainActivity extends AppCompatActivity  implements SensorEventListe
         mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_FASTEST);
         mSensorManager.registerListener(this, mLinearAcceleration, SensorManager.SENSOR_DELAY_FASTEST);
 
+    }
+
+    private void setupLayout() {
+
+        mBikingTxt = findViewById(R.id.txtBiking);
+        mJoggingTxt = findViewById(R.id.txtJogging);
+        mDownstairsTxt = findViewById(R.id.txtDownstairs);
+        mSittingTxt = findViewById(R.id.txtSitting);
+        mStandingTxt = findViewById(R.id.txtStanding);
+        mUpstairsTxt = findViewById(R.id.txtUpstairs);
+        mWalkingTxt = findViewById(R.id.txtWalking);
     }
 
     @Override
@@ -90,6 +107,15 @@ public class MainActivity extends AppCompatActivity  implements SensorEventListe
 
             results = classifier.predictProbabilities(toFloatArray(data));
             Log.d("TAG", "predictActivity: " + Arrays.toString(results));
+
+            mBikingTxt.setText("Biking: \t" + round(results[0]));
+            mDownstairsTxt.setText("Downstairs: \t" + round(results[1]));
+            mJoggingTxt.setText("Jogging: \t" + round(results[2]));
+            mSittingTxt.setText("Sitting: \t" + round(results[3]));
+            mStandingTxt.setText("Standing: \t" + round(results[4]));
+            mUpstairsTxt.setText("Upstairs: \t" + round(results[5]));
+            mWalkingTxt.setText("Walking: \t" + round(results[6]));
+
             ax.clear(); ay.clear(); az.clear();
             gx.clear(); gy.clear(); gz.clear();
             lx.clear(); ly.clear(); lz.clear();
@@ -103,6 +129,13 @@ public class MainActivity extends AppCompatActivity  implements SensorEventListe
             array[i++] = (f != null ? f: Float.NaN);
 
         return array;
+    }
+
+    private float round(float value){
+        int decimal_places = 2;
+        BigDecimal bigDecimal = new BigDecimal(Float.toString(value));
+        bigDecimal = bigDecimal.setScale(decimal_places, BigDecimal.ROUND_HALF_UP);
+        return bigDecimal.floatValue();
     }
 
     @Override
